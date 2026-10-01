@@ -15,31 +15,36 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
 
-    - name: Setup Java JDK
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Install Cordova
-      run: npm install -g cordova
-
-    - name: Create Cordova Project & Build APK
+    - name: Install Ionic & Capacitor
       run: |
-        cordova create app com.devkumar.calculator "Devkumar Calculator"
-        cp index.html app/www/
-        cp config.xml app/
-        cd app
-        cordova platform add android@latest
-        cordova build android --device
+        npm install -g @ionic/cli
+        npm init -y
+        npm install @capacitor/core @capacitor/cli @capacitor/android
+
+    - name: Build Web Assets & Add Android
+      run: |
+        mkdir -p www
+        cp index.html www/
+        npx cap init "Devkumar Calculator" "com.devkumar.calculator" --web-dir www
+        npx cap add android
+        npx cap sync android
+
+    - name: Build APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Calculator-APK
-        path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
