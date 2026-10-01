@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android Webview APK
 
 on:
   push:
@@ -12,31 +12,25 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Java JDK
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
         java-version: '17'
+        distribution: 'temurin'
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Generate Android Project using Bubblewrap
+    - name: Build Webview App
       run: |
-        npm install -g @bubblewrap/cli
-        mkdir pwa
-        cp index.html pwa/
-        if [ -f config.xml ]; then cp config.xml pwa/; fi
-        
-        # Simple Android Webview Wrapper
         npm install -g cordova
         cordova create app com.devkumar.calculator "Devkumar Calculator"
-        cp -r pwa/* app/www/
+        cp index.html app/www/index.html
         cd app
-        cordova platform add android@12.0.0 --nostart
-        cordova build android --device
+        cordova platform add android
+        cordova build android --debug
 
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Calculator-APK
