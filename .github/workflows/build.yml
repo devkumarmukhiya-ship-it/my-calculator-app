@@ -12,39 +12,32 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
-    - name: Setup Java
+    - name: Setup Java JDK
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install Ionic & Capacitor
-      run: |
-        npm install -g @ionic/cli
-        npm init -y
-        npm install @capacitor/core @capacitor/cli @capacitor/android
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
 
-    - name: Build Web Assets & Add Android
+    - name: Generate Android Project using Bubblewrap
       run: |
-        mkdir -p www
-        cp index.html www/
-        npx cap init "Devkumar Calculator" "com.devkumar.calculator" --web-dir www
-        npx cap add android
-        npx cap sync android
-
-    - name: Build APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        npm install -g @bubblewrap/cli
+        mkdir pwa
+        cp index.html pwa/
+        if [ -f config.xml ]; then cp config.xml pwa/; fi
+        
+        # Simple Android Webview Wrapper
+        npm install -g cordova
+        cordova create app com.devkumar.calculator "Devkumar Calculator"
+        cp -r pwa/* app/www/
+        cd app
+        cordova platform add android@12.0.0 --nostart
+        cordova build android --device
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Calculator-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
