@@ -1,4 +1,4 @@
-name: Build Android Webview APK
+name: Build Android APK
 
 on:
   push:
@@ -9,29 +9,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Set up Java JDK
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
         distribution: 'temurin'
+        java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Build Webview App
+    - name: Install Cordova and Build APK
       run: |
         npm install -g cordova
-        cordova create app com.devkumar.calculator "Devkumar Calculator"
-        cp index.html app/www/index.html
-        cd app
-        cordova platform add android
+        cordova create myApp com.devkumar.calculator "Devkumar Calculator"
+        cd myApp
+        cp ../index.html www/index.html
+        cordova platform add android@10.1.2
         cordova build android --debug
 
-    - name: Upload APK Artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Calculator-APK
-        path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: myApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
