@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.devkumar.calculator" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+    <name>Devkumar Calculator</name>
+    <description>Scientific and Loan Calculator App</description>
+    <author>Devkumar Mukhiya</author>
+    <content src="index.html" />
+</widget>
