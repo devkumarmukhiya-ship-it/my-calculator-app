@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android Webview APK
 
 on:
   push:
@@ -12,28 +12,112 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
     - name: Set up Java JDK
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
         java-version: '17'
+        distribution: 'temurin'
 
-    - name: Install Cordova and Build APK
+    - name: Setup Android Project Structure
       run: |
-        npm install -g cordova
-        cordova create myApp com.devkumar.calculator "Devkumar Calculator"
-        cd myApp
-        cp ../index.html www/index.html
-        cordova platform add android@10.1.2
-        cordova build android --debug
+        mkdir -p android-app/app/src/main/assets
+        mkdir -p android-app/app/src/main/java/com/devkumar/calculator
+        mkdir -p android-app/app/src/main/res/values
 
-    - name: Upload APK
+        # Copy HTML files to assets
+        cp index.html android-app/app/src/main/assets/
+
+        # Create AndroidManifest.xml
+        cat << 'EOF' > android-app/app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            package="com.devkumar.calculator">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <application
+                android:allowBackup="true"
+                android:label="Devkumar Calculator"
+                android:supportsRtl="true"
+                android:theme="@android:style/Theme.NoTitleBar">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # Create MainActivity.java
+        cat << 'EOF' > android-app/app/src/main/java/com/devkumar.calculator/MainActivity.java
+        package com.devkumar.calculator;
+        import android.app.Activity;
+        import android.os.Bundle;
+        import android.webkit.WebView;
+        import android.webkit.WebViewClient;
+
+        public class MainActivity extends Activity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                WebView webView = new WebView(this);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.setWebViewClient(new WebViewClient());
+                webView.loadUrl("file:///android_asset/index.html");
+                setContentView(webView);
+            }
+        }
+        EOF
+
+        # Create build.gradle for app
+        cat << 'EOF' > android-app/app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            namespace 'com.devkumar.calculator'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.devkumar.calculator"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        EOF
+
+        # Create root build.gradle
+        cat << 'EOF' > android-app/build.gradle
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.1'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+
+        # Create settings.gradle
+        cat << 'EOF' > android-app/settings.gradle
+        include ':app'
+        EOF
+
+    - name: Build Debug APK with Gradle
+      run: |
+        cd android-app
+        gradle assembleDebug
+
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Calculator-APK
-        path: myApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: android-app/app/build/outputs/apk/debug/app-debug.apk
