@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Devkumar Mukhiya Calculator</title>
+<style>
+  :root {
+    --bg: #1a1d29;
+    --panel: #242838;
+    --display-bg: #2c3145;
+    --display-fg: #f3f5f9;
+    --display-prev: rgba(243,245,249,0.5);
+    --glow: none;
+    --key-bg: #2f3346;
+    --key-fg: #eef0f6;
+    --key-op-bg: #ff6a4d;
+    --key-op-fg: #fff8f5;
+    --key-fn-bg: #363b52;
+    --key-fn-fg: #dfe3ee;
+    --accent: #ff6a4d;
+    --brand-green: #55585e;
+    --text-primary: #1c1e22;
+    --text-secondary: #55585e;
+    --text-muted: #83868c;
+    --label-color: #5f6369;
+    --border-soft: rgba(28,30,34,0.09);
+    --row-border: rgba(28,30,34,0.08);
+    --input-bg: rgba(28,30,34,0.04);
+    --tab-bg: rgba(28,30,34,0.06);
+    --stripe: rgba(28,30,34,0.025);
+    --tfoot-bg: #dcdcdf;
+    --card-shadow: 0 18px 40px rgba(28,30,34,0.14);
+    --card-border: rgba(28,30,34,0.07);
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    transition: background 0.2s ease;
+  }
+  body {
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Display", system-ui, sans-serif;
+    padding: 24px;
+  }
+  .calc {
+    width: 100%;
+    max-width: 380px;
+    background: var(--panel);
+    border-radius: 28px;
+    padding: 22px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--card-border);
+    transition: background 0.2s ease;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2px 6px 12px;
+  }
+  .brand {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--brand-green);
+  }
+  .theme-toggle {
+    background: var(--key-fn-bg);
+    color: var(--text-primary);
+    border-radius: 12px;
+    padding: 7px 12px;
+    font-size: 14px;
+    box-shadow: none;
+  }
+  .theme-toggle:active { transform: none; }
+  .display {
+    background: var(--display-bg);
+    border-radius: 20px;
+    padding: 24px 18px 16px;
+    margin-bottom: 16px;
+    text-align: right;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(28,37,64,0.06);
+  }
+  .display .prev {
+    color: var(--display-prev);
+    font-size: 14px;
+    font-weight: 500;
+    min-height: 18px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .display .curr {
+    color: var(--display-fg);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow-x: auto;
+    text-shadow: var(--glow);
+  }
+  .display .preview {
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 600;
+    min-height: 22px;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  button {
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 13px 0;
+    background: var(--key-bg);
+    color: var(--key-fg);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(28,37,64,0.06);
+    transition: transform 0.05s ease, box-shadow 0.05s ease, opacity 0.05s ease;
+  }
+  button:active {
+    transform: scale(0.96);
+    opacity: 0.85;
+  }
+  .fn { background: var(--key-fn-bg); color: var(--key-fn-fg); font-size: 14px; }
+  .fn.active-inv { background: var(--accent); color: #fff; }
+  .op { background: var(--key-op-bg); color: var(--key-op-fg); }
+  .eq {
+    background: var(--accent);
+    color: #fff8f5;
+    font-weight: bold;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin: 0 6px 12px;
+    background: var(--tab-bg);
+    border-radius: 16px;
+    padding: 4px;
+  }
+  .tabs button {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: transparent;
+    color: var(--text-muted);
+    box-shadow: none;
+    border-radius: 12px;
+  }
+  .tabs button.active {
+    background: var(--key-fn-bg);
+    color: var(--key-fn-fg);
+  }
+  .tabs button:active { transform: none; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .field {
+    margin-bottom: 12px;
+  }
+  .field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--label-color);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  .field input {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 11px 14px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 16px;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field-row {
+    display: flex;
+    gap: 10px;
+  }
+  .field-row .field { flex: 1; }
+
+  .result-group {
+    background: var(--display-bg);
+    border-radius: 16px;
+    padding: 6px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(28,37,64,0.06);
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 0;
+    font-size: 12.5px;
+    border-top: 1px solid var(--row-border);
+  }
+  .result-row:first-child { border-top: none; }
+  .result-row .lbl {
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+  }
+  .result-row .val {
+    color: var(--display-fg);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .result-row.total .lbl {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  .result-row.total .val {
+    color: var(--accent);
+    font-size: 15.5px;
+    text-shadow: 0 0 6px rgba(201,122,43,0.45);
+  }
+
+  .loan-output { display: none; }
+  .loan-output.show { display: block; }
+
+  .loan-actions {
+    display: flex;
+    gap: 10px;
+    margin: 4px 0 14px;
+  }
+  .loan-actions button {
+    flex: 1;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    padding: 13px 0;
+  }
+  .btn-calculate {
+    background: var(--accent);
+    color: #fff7ec;
+    font-weight: bold;
+  }
+  .btn-clear {
+    background: var(--key-fn-bg);
+    color: var(--key-fn-fg);
+  }
+
+  .schedule-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--label-color);
+    margin: 16px 6px 8px;
+  }
+  .schedule-wrap {
+    max-height: 260px;
+    overflow: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+  }
+  table.schedule {
+    width: 100%;
+    min-width: 440px;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  table.schedule thead th {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, var(--key-op-bg), var(--accent));
+    color: var(--key-op-fg);
+    padding: 9px 7px;
+    text-align: right;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  table.schedule thead th:first-child { text-align: center; }
+  table.schedule tbody td {
+    padding: 7px 7px;
+    text-align: right;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-top: 1px solid var(--row-border);
+    white-space: nowrap;
+  }
+  table.schedule tbody td:first-child {
+    text-align: center;
+    color: var(--text-muted);
+  }
+  table.schedule tbody tr:nth-child(even) { background: var(--stripe); }
+  table.schedule tbody td.balance { color: var(--display-fg); font-weight: 600; }
+  table.schedule tbody tr:last-child td { color: var(--accent); font-weight: 600; }
+  table.schedule tfoot td {
+    position: sticky;
+    bottom: 0;
+    padding: 9px 7px;
+    text-align: right;
+    background: var(--tfoot-bg);
+    color: var(--display-fg);
+    font-weight: 700;
+    border-top: 2px solid rgba(201,122,43,0.6);
+    white-space: nowrap;
+  }
+  table.schedule tfoot td:first-child { text-align: center; color: var(--text-muted); font-weight: 600; }
+
+  .history-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 2px 6px 12px;
+  }
+  .history-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    flex: 1;
+  }
+  .history-actions .btn-clear {
+    flex: 0 0 auto;
+    font-size: 11px;
+    padding: 9px 12px;
+    letter-spacing: 0.03em;
+  }
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .history-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    padding: 30px 10px;
+  }
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--display-bg);
+    border-radius: 16px;
+    padding: 10px 14px;
+    box-shadow: 0 2px 10px rgba(28,37,64,0.06);
+    cursor: pointer;
+  }
+  .history-item:active { transform: translateY(1px); }
+  .history-main { min-width: 0; }
+  .history-expr {
+    color: var(--display-prev);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .history-result {
+    color: var(--display-fg);
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow-x: auto;
+    text-shadow: var(--glow);
+  }
+  .history-time {
+    color: var(--text-muted);
+    font-size: 9.5px;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+  .history-del {
+    flex: 0 0 auto;
+    background: var(--key-fn-bg);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 8px 11px;
+    font-size: 13px;
+    box-shadow: none;
+  }
+  .history-del:active { transform: none; }
+
+  /* ---- Google-style layout ---- */
+  :root{--bg:#9c9c9c;--panel:#9c9c9c;--display-bg:#8e8e8e;--display-fg:#1c1e22;--key-bg:#37322e;--key-fg:#f5efe8;--key-fn-bg:#443c34;--key-fn-fg:#f0d3a3;--key-op-bg:#4d3d28;--key-op-fg:#ffab4d;--accent:#ffab4d;--eq-fg:#1a1200;--tfoot-bg:#8e8e8e;--key-hi:rgba(255,255,255,.09);--key-lo:rgba(0,0,0,.6)}
+
+  :root[data-theme="classic-light"]{--bg:#f3f6ec;--panel:#f3f6ec;--display-bg:#e9eee1;--display-fg:#1b1f17;--display-prev:rgba(28,37,64,0.5);--glow:none;--key-bg:#e4e8dc;--key-fg:#1b1f17;--key-fn-bg:#d5e2cd;--key-fn-fg:#1b1f17;--key-op-bg:#d5e2cd;--key-op-fg:#1b1f17;--accent:#1f6f70;--brand-green:#3d4a8a;--eq-fg:#fff;--tfoot-bg:#e9eee1;--key-hi:rgba(255,255,255,.85);--key-lo:rgba(28,37,64,.16);--text-primary:#1c2540;--text-secondary:#545e7e;--text-muted:#9096ab;--label-color:#6b7396;--border-soft:rgba(28,37,64,0.08);--row-border:rgba(28,37,64,0.07);--input-bg:rgba(28,37,64,0.035);--tab-bg:rgba(28,37,64,0.05);--stripe:rgba(28,37,64,0.025);--card-shadow:0 18px 40px rgba(28,37,64,0.12);--card-border:rgba(28,37,64,0.06)}
+  :root[data-theme="classic-light"] .keys > .ac{background:#b7e3a3;color:#0d4a00}
+  body{padding:0;align-items:stretch;justify-content:center}
+  .calc{display:flex;flex-direction:column;min-height:100dvh;width:100%;max-width:none;border-radius:0;border:none;box-shadow:none;padding:12px 12px 18px}
+  #panel-calc.active{display:flex;flex-direction:column;flex:1}
+  .topbar{position:relative;margin:0 0 6px}
+  .title{font-size:15px;font-weight:600;color:var(--text-secondary)}
+  .icon-btn{background:transparent;box-shadow:none;width:44px;height:44px;padding:0;border-radius:50%;color:var(--text-primary);display:flex;align-items:center;justify-content:center;font-size:24px}
+  .menu{display:none;position:absolute;right:0;top:48px;min-width:240px;background:var(--key-fn-bg);border-radius:20px;padding:8px 0;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .menu.open{display:block}
+  .menu button{display:flex;align-items:center;gap:16px;width:100%;background:transparent;box-shadow:none;border-radius:0;padding:14px 20px;font-size:16px;font-weight:500;text-align:left;color:var(--text-primary)}
+  .menu button.active{color:var(--accent)}
+  .display{flex:1;display:flex;flex-direction:column;justify-content:flex-end;background:transparent;box-shadow:none;border-radius:0;padding:8px 10px;margin-bottom:0}
+  .display .curr{font-size:56px;font-weight:400}
+  .display .preview{font-size:26px;color:var(--text-secondary);min-height:34px}
+  .tools{display:flex;margin:0 0 6px}
+  button,.icon-btn,.menu button,.tabs button{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+  button:focus,.icon-btn:focus,.menu button:focus,.tabs button:focus{outline:none}
+  .keys > button{aspect-ratio:1/1;border-radius:30px;padding:0;font-size:30px;font-weight:500;box-shadow:0 14px 28px -8px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.3),0 2px 0 var(--key-hi) inset,0 -8px 14px var(--key-lo) inset;transition:transform .06s ease,box-shadow .06s ease}
+
+  .keys > button:active{box-shadow:0 2px 5px rgba(0,0,0,.35) inset;transform:scale(.96)}
+  
+  .keys > .ac{background:#164d00;color:#7dff4c}
+  .keys > .eq{color:var(--eq-fg)}
+  .sci{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .sci.hidden{display:none}
+  .sci button{aspect-ratio:1/1;border-radius:30px;padding:0;font-size:16px;box-shadow:0 14px 28px -8px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.3),0 2px 0 var(--key-hi) inset,0 -8px 14px var(--key-lo) inset}
+  
+  .fn.active-inv,.btn-calculate{color:var(--eq-fg)}
+  table.schedule thead th{background:var(--key-fn-bg);color:var(--text-primary)}
+  table.schedule tfoot td{border-top:2px solid var(--accent)}
+  .result-row.total .val{text-shadow:none}
+  .ic-hist,.ic-back{display:flex}
+  .ic-back{display:none}
+  .in-extra .ic-hist{display:none}
+  .in-extra .ic-back{display:flex}
+  .in-extra .tabs{display:none}
+  .field textarea{width:100%;background:var(--input-bg);border:1px solid var(--border-soft);border-radius:14px;padding:11px 14px;color:var(--text-primary);font-family:inherit;font-size:16px;resize:vertical}
+  .field textarea:focus{outline:none;border-color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="calc">
+    <div class="topbar">
+      <button id="tab-history" class="icon-btn" aria-label="History"><span class="ic-hist"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></span><span class="ic-back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></span></button>
+      <div id="title" class="title"></div>
+      <button id="menu-btn" class="icon-btn" aria-label="More options">&#8942;</button>
+      <div id="menu" class="menu">
+        <button id="menu-clear"><span>🗑️</span>Clear history</button>
+        <button id="theme-toggle" aria-label="Choose theme"><span>🎨</span>Choose theme</button>
+        <button id="menu-settings"><span>⚙️</span>Settings</button>
+        <button id="menu-feedback"><span>💬</span>Send feedback</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-calc" class="active" data-tab="calc">CALCULATOR</button>
+      <button id="tab-loan" data-tab="loan">LOAN</button>
+    </div>
+
+    <div id="panel-calc" class="panel active">
+      <div class="display">
+        <div class="curr" id="curr">0</div>
+        <div class="preview" id="preview">&nbsp;</div>
+      </div>
+      <div class="tools"><button id="sci-toggle" class="icon-btn" aria-label="Show or hide scientific keys"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5-5 5 5"/><path d="M7 15l5 5 5-5"/></svg></button></div>
+      <div class="keys">
+        <div class="sci hidden" id="sci">
+          <button class="fn" id="btn-sqrt" data-action="sqrt">√</button>
+          <button class="fn" data-action="pi">π</button>
+          <button class="fn" data-action="pow">^</button>
+          <button class="fn" data-action="fact">!</button>
+
+          <button class="fn" id="btn-deg" data-action="deg">Deg</button>
+          <button class="fn" id="btn-sin" data-action="sin">sin</button>
+          <button class="fn" id="btn-cos" data-action="cos">cos</button>
+          <button class="fn" id="btn-tan" data-action="tan">tan</button>
+
+          <button class="fn" id="btn-inv" data-action="inv">Inv</button>
+          <button class="fn" data-action="euler">e</button>
+          <button class="fn" id="btn-ln" data-action="ln">ln</button>
+          <button class="fn" id="btn-log" data-action="log">log</button>
+        </div>
+        <button class="fn ac" data-action="clear">AC</button>
+        <button class="fn" data-action="paren">( )</button>
+        <button class="op" data-action="percent">%</button>
+        <button class="op" data-action="divide">÷</button>
+
+        <button data-num="7">7</button>
+        <button data-num="8">8</button>
+        <button data-num="9">9</button>
+        <button class="op" data-action="multiply">×</button>
+
+        <button data-num="4">4</button>
+        <button data-num="5">5</button>
+        <button data-num="6">6</button>
+        <button class="op" data-action="subtract">−</button>
+
+        <button data-num="1">1</button>
+        <button data-num="2">2</button>
+        <button data-num="3">3</button>
+        <button class="op" data-action="add">+</button>
+
+        <button data-num="0">0</button>
+        <button data-action="decimal">.</button>
+        <button class="fn" data-action="backspace">⌫</button>
+        <button class="eq" data-action="equals">=</button>
+      </div>
+    </div>
+
+    <div id="panel-loan" class="panel">
+      <div class="field">
+        <label for="loan-amount">Loan amount (Rs.)</label>
+        <input type="number" id="loan-amount" inputmode="decimal" placeholder="10,00,000" min="0">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="loan-rate">Interest rate (% / year)</label>
+          <input type="number" id="loan-rate" inputmode="decimal" placeholder="10" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label for="loan-duration">Loan duration (months)</label>
+          <input type="number" id="loan-duration" inputmode="decimal" placeholder="60" min="0" step="1">
+        </div>
+      </div>
+
+      <div class="loan-actions">
+        <button class="btn-calculate" id="loan-calculate">CALCULATE</button>
+        <button class="btn-clear" id="loan-clear">CLEAR</button>
+      </div>
+
+      <div class="loan-output" id="loan-output">
+        <div class="result-group">
+          <div class="result-row"><span class="lbl">Total loan amount</span><span class="val" id="r-total-amount">Rs. 0</span></div>
+          <div class="result-row"><span class="lbl">Service charge (1%)</span><span class="val" id="r-service">Rs. 0</span></div>
+          <div class="result-row"><span class="lbl">Insurance charge</span><span class="val" id="r-insurance">Rs. 0</span></div>
+          <div class="result-row total"><span class="lbl">Total charge</span><span class="val" id="r-total-charge">Rs. 0</span></div>
+        </div>
+
+        <div class="result-group">
+          <div class="result-row"><span class="lbl">Monthly principal</span><span class="val" id="r-monthly-principal">Rs. 0</span></div>
+          <div class="result-row"><span class="lbl">Monthly interest (1st mo.)</span><span class="val" id="r-monthly-interest">Rs. 0</span></div>
+          <div class="result-row total"><span class="lbl">Monthly installment (1st mo.)</span><span class="val" id="r-monthly-installment">Rs. 0</span></div>
+        </div>
+
+        <div class="result-group">
+          <div class="result-row"><span class="lbl">Total disbursement</span><span class="val" id="r-disbursement">Rs. 0</span></div>
+          <div class="result-row"><span class="lbl">Total interest</span><span class="val" id="r-total-interest">Rs. 0</span></div>
+          <div class="result-row total"><span class="lbl">Total payment</span><span class="val" id="r-total-payment">Rs. 0</span></div>
+        </div>
+
+        <div class="schedule-title">PAYMENT SCHEDULE · interest declines monthly</div>
+        <div class="schedule-wrap">
+          <table class="schedule">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Principal</th>
+                <th>Interest</th>
+                <th>Installment</th>
+                <th>Balance</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body"></tbody>
+            <tfoot id="schedule-foot"></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-settings" class="panel extra">
+      <div class="field">
+        <label for="set-rate">SET INTEREST RATE (% / year)</label>
+        <input type="number" id="set-rate" inputmode="decimal" placeholder="e.g. 12" min="0" step="0.01">
+      </div>
+      <div class="loan-actions">
+        <button class="btn-calculate" id="rate-save">SAVE</button>
+        <button class="btn-clear" id="rate-reset">RESET</button>
+      </div>
+      <div class="history-hint" id="rate-note"></div>
+    </div>
+
+    <div id="panel-feedback" class="panel extra">
+      <div class="field">
+        <label for="fb-text">YOUR FEEDBACK</label>
+        <textarea id="fb-text" rows="7" placeholder="Write your feedback here..."></textarea>
+      </div>
+      <div class="loan-actions"><button class="btn-calculate" id="fb-send">SEND</button></div>
+    </div>
+
+    <div id="panel-history" class="panel">
+      <div class="history-actions">
+        <div class="history-hint">Tap an entry to reload its result. Check here anytime you think a calculation went wrong.</div>
+        <button class="btn-clear" id="history-clear">CLEAR ALL</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="history-empty" id="history-empty">No calculations yet.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  let expr = "";
+  let angleMode = "deg";
+  let invMode = false;
+
+  const currEl = document.getElementById("curr");
+  const previewEl = document.getElementById("preview");
+
+  function toRad(x) { return angleMode === "deg" ? (x * Math.PI) / 180 : x; }
+  function fromRad(x) { return angleMode === "deg" ? (x * 180) / Math.PI : x; }
+  function sin(x) { return Math.sin(toRad(x)); }
+  function cos(x) { return Math.cos(toRad(x)); }
+  function tan(x) { return Math.tan(toRad(x)); }
+  function asin(x) { return fromRad(Math.asin(x)); }
+  function acos(x) { return fromRad(Math.acos(x)); }
+  function atan(x) { return fromRad(Math.atan(x)); }
+  function ln(x) { return Math.log(x); }
+  function log(x) { return Math.log10(x); }
+  function sqrtFn(x) { return Math.sqrt(x); }
+  function sq(x) { return x * x; }
+  function expFn(x) { return Math.exp(x); }
+  function pow10(x) { return Math.pow(10, x); }
+  function pct(x) { return x / 100; }
+  function fact(x) {
+    if (x < 0 || Math.floor(x) !== x) return NaN;
+    if (x > 170) return Infinity;
+    let r = 1;
+    for (let i = 2; i <= x; i++) r *= i;
+    return r;
+  }
+
+  function preprocessPostfix(s, symbol, fnName) {
+    let result = "";
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === symbol) {
+        if (result.endsWith(")")) {
+          let depth = 0, j = result.length - 1;
+          for (; j >= 0; j--) {
+            if (result[j] === ")") depth++;
+            else if (result[j] === "(") { depth--; if (depth === 0) break; }
+          }
+          const operand = result.slice(j);
+          result = result.slice(0, j) + fnName + "(" + operand + ")";
+        } else {
+          const m = result.match(/(\d+(?:\.\d+)?)$/);
+          if (m) {
+            const operand = m[1];
+            result = result.slice(0, result.length - operand.length) + fnName + "(" + operand + ")";
+          } else {
+            result += symbol;
+          }
+        }
+      } else {
+        result += s[i];
+      }
+    }
+    return result;
+  }
+
+  function toEvalString(str) {
+    let s = str;
+    s = preprocessPostfix(s, "!", "fact");
+    s = preprocessPostfix(s, "\u00B2", "sq");
+    s = preprocessPostfix(s, "%", "pct");
+    s = s.replace(/√\(/g, "sqrtFn(");
+    s = s.replace(/×/g, "*");
+    s = s.replace(/÷/g, "/");
+    s = s.replace(/−/g, "-");
+    s = s.replace(/\^/g, "**");
+    s = s.replace(/π/g, "Math.PI");
+    s = s.replace(/ℯ/g, "Math.E");
+    return s;
+  }
+
+  function autoCloseParens(s) {
+    const opens = (s.match(/\(/g) || []).length;
+    const closes = (s.match(/\)/g) || []).length;
+    return opens > closes ? s + ")".repeat(opens - closes) : s;
+  }
+
+  function evaluateExpr(s) {
+    const f = new Function(
+      "sin", "cos", "tan", "asin", "acos", "atan", "ln", "log",
+      "sqrtFn", "sq", "expFn", "pow10", "pct", "fact",
+      "return (" + s + ");"
+    );
+    return f(sin, cos, tan, asin, acos, atan, ln, log, sqrtFn, sq, expFn, pow10, pct, fact);
+  }
+
+  function computeValue(str) {
+    if (!str) return null;
+    try {
+      const v = evaluateExpr(toEvalString(autoCloseParens(str)));
+      if (typeof v !== "number" || !isFinite(v)) return null;
+      return v;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const HISTORY_KEY = "dm-calc-history";
+  const historyListEl = document.getElementById("history-list");
+  const historyEmptyEl = document.getElementById("history-empty");
+  const historyClearBtn = document.getElementById("history-clear");
+  let history = [];
+
+  function loadHistory() {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      history = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      history = [];
+    }
+  }
+
+  function saveHistory() {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {}
+  }
+
+  function addHistory(exprText, resultText) {
+    if (resultText === "Error") return;
+    history.unshift({
+      expr: exprText,
+      result: resultText,
+      time: new Date().toLocaleString(),
+    });
+    if (history.length > 100) history.length = 100;
+    saveHistory();
+  }
+
+  function renderHistory() {
+    historyListEl.querySelectorAll(".history-item").forEach((el) => el.remove());
+    historyEmptyEl.style.display = history.length ? "none" : "block";
+    history.forEach((item, idx) => {
+      const row = document.createElement("div");
+      row.className = "history-item";
+      row.innerHTML = `
+        <div class="history-main">
+          <div class="history-expr"></div>
+          <div class="history-result"></div>
+          <div class="history-time"></div>
+        </div>
+        <button class="history-del" aria-label="Delete entry">✕</button>
+      `;
+      row.querySelector(".history-expr").textContent = item.expr;
+      row.querySelector(".history-result").textContent = item.result;
+      row.querySelector(".history-time").textContent = item.time;
+      row.addEventListener("click", () => {
+        expr = item.result;
+        render();
+        showTab("calc");
+      });
+      row.querySelector(".history-del").addEventListener("click", (e) => {
+        e.stopPropagation();
+        history.splice(idx, 1);
+        saveHistory();
+        renderHistory();
+      });
+      historyListEl.appendChild(row);
+    });
+  }
+
+  historyClearBtn.addEventListener("click", () => {
+    history = [];
+    saveHistory();
+    renderHistory();
+  });
+
+  loadHistory();
+
+  function formatResult(n) {
+    if (n === null || Number.isNaN(n)) return "Error";
+    let s = String(Math.round(n * 1e10) / 1e10);
+    if (s.length > 14) s = n.toExponential(6);
+    return s;
+  }
+
+  function truncateExpr(str) {
+    if (!/[+\u2212\u00d7\u00f7]/.test(str)) return str;
+    return str.replace(/\d+(\.\d+)?/g, (num) => (num.length > 9 ? num.slice(0, 6) + "\u2026" : num));
+  }
+
+  function render() {
+    currEl.textContent = expr === "" ? "0" : truncateExpr(expr);
+    const v = computeValue(expr);
+    const resultStr = v === null ? null : formatResult(v);
+    previewEl.textContent = (expr && resultStr !== null && resultStr !== expr) ? resultStr : "\u00A0";
+  }
+
+  function inputDigit(d) {
+    if (expr === "Error") expr = "";
+    expr += d;
+  }
+
+  function inputDecimal() {
+    if (expr === "Error") expr = "";
+    const m = expr.match(/(\d+\.\d*|\.\d*|\d+)$/);
+    if (m && m[0].includes(".")) return;
+    expr += ".";
+  }
+
+  function inputOperator(sym) {
+    if (expr === "Error") expr = "";
+    if (expr === "") {
+      if (sym === "−") expr = "-";
+      return;
+    }
+    const last = expr[expr.length - 1];
+    if ("+-−×÷^".includes(last)) {
+      expr = expr.slice(0, -1) + sym;
+    } else {
+      expr += sym;
+    }
+  }
+
+  function appendToken(tok) {
+  if (expr === "Error") expr = "";
+  expr += tok;
+}
+
+function handlePrefixFn(name) {
+  if (expr === "Error") expr = "";
+  expr += name + "(";
+}
+
+function handlePostfix(sym) {
+  if (expr === "Error") expr = "";
+  const last = expr[expr.length - 1];
+  if (last && /[\d)]/.test(last)) expr += sym;
+}
+
+function handleParen() {
+  if (expr === "Error") expr = "";
+  const opens = (expr.match(/\(/g) || []).length;
+  const closes = (expr.match(/\)/g) || []).length;
+  const last = expr[expr.length - 1];
+  if (opens > closes && last && /[\d)]/.test(last)) expr += ")";
+  else expr += "(";
+}
+
+function handleBackspace() {
+  expr = expr === "Error" ? "" : expr.slice(0, -1);
+}
+
+function handleClear() {
+  expr = "";
+}
+
+function handleEquals() {
+  if (expr === "" || expr === "Error") return;
+  const v = computeValue(expr);
+  const resultStr = formatResult(v);
+  if (resultStr !== "Error") {
+    addHistory(expr, resultStr);
+    expr = resultStr;
+  } else {
+    expr = "Error";
+  }
+}
+
+    
+  
+
+  function refreshInvLabels() {
+    document.getElementById("btn-sin").textContent = invMode ? "sin\u207B\u00B9" : "sin";
+    document.getElementById("btn-cos").textContent = invMode ? "cos\u207B\u00B9" : "cos";
+    document.getElementById("btn-tan").textContent = invMode ? "tan\u207B\u00B9" : "tan";
+    document.getElementById("btn-ln").textContent = invMode ? "e\u02E3" : "ln";
+    document.getElementById("btn-log").textContent = invMode ? "10\u02E3" : "log";
+    document.getElementById("btn-sqrt").textContent = invMode ? "x\u00B2" : "√";
+  }
+
+  document.querySelectorAll("button[data-num]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      inputDigit(btn.dataset.num);
+      render();
+    });
+  });
+
+  document.querySelectorAll("button[data-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const a = btn.dataset.action;
+      switch (a) {
+        case "clear": handleClear(); break;
+        case "backspace": handleBackspace(); break;
+        case "decimal": inputDecimal(); break;
+        case "paren": handleParen(); break;
+        case "percent": handlePostfix("%"); break;
+        case "add": inputOperator("+"); break;
+        case "subtract": inputOperator("−"); break;
+        case "multiply": inputOperator("×"); break;
+        case "divide": inputOperator("÷"); break;
+        case "pow": inputOperator("^"); break;
+        case "fact": handlePostfix("!"); break;
+        case "sqrt":
+          if (invMode) handlePostfix("\u00B2"); else handlePrefixFn("√");
+          break;
+        case "pi": appendToken("π"); break;
+        case "euler": appendToken("ℯ"); break;
+        case "ln": handlePrefixFn(invMode ? "exp" : "ln"); break;
+        case "log": handlePrefixFn(invMode ? "pow10" : "log"); break;
+        case "sin": handlePrefixFn(invMode ? "asin" : "sin"); break;
+        case "cos": handlePrefixFn(invMode ? "acos" : "cos"); break;
+        case "tan": handlePrefixFn(invMode ? "atan" : "tan"); break;
+        case "deg":
+          angleMode = angleMode === "deg" ? "rad" : "deg";
+          document.getElementById("btn-deg").textContent = angleMode === "deg" ? "Deg" : "Rad";
+          break;
+        case "inv":
+          invMode = !invMode;
+          document.getElementById("btn-inv").classList.toggle("active-inv", invMode);
+          refreshInvLabels();
+          break;
+        case "equals": handleEquals(); break;
+        default: break;
+      }
+      render();
+    });
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key >= "0" && e.key <= "9") inputDigit(e.key);
+    else if (e.key === ".") inputDecimal();
+    else if (e.key === "+") inputOperator("+");
+    else if (e.key === "-") inputOperator("−");
+    else if (e.key === "*") inputOperator("×");
+    else if (e.key === "/") inputOperator("÷");
+    else if (e.key === "^") inputOperator("^");
+    else if (e.key === "(" || e.key === ")") appendToken(e.key);
+    else if (e.key === "%") handlePostfix("%");
+    else if (e.key === "!") handlePostfix("!");
+    else if (e.key === "Enter" || e.key === "=") handleEquals();
+    else if (e.key === "Escape") handleClear();
+    else if (e.key === "Backspace") handleBackspace();
+    else return;
+    render();
+  });
+
+  render();
+
+  const tabCalc = document.getElementById("tab-calc");
+  const tabLoan = document.getElementById("tab-loan");
+  const tabHistory = document.getElementById("tab-history");
+  const panelCalc = document.getElementById("panel-calc");
+  const panelLoan = document.getElementById("panel-loan");
+  const panelHistory = document.getElementById("panel-history");
+
+  function showTab(name) {
+    tabCalc.classList.toggle("active", name === "calc");
+    tabLoan.classList.toggle("active", name === "loan");
+    tabHistory.classList.toggle("active", name === "history");
+    panelCalc.classList.toggle("active", name === "calc");
+    panelLoan.classList.toggle("active", name === "loan");
+    panelHistory.classList.toggle("active", name === "history");
+    if (name === "history") renderHistory();
+    document.getElementById("title").textContent = {calc:"",loan:"",history:"History"}[name];
+    document.querySelectorAll(".extra").forEach((e) => e.classList.remove("active"));
+    document.querySelector(".calc").classList.remove("in-extra");
+  }
+  tabCalc.addEventListener("click", () => showTab("calc"));
+  tabLoan.addEventListener("click", () => showTab("loan"));
+  tabHistory.addEventListener("click", () => showTab(panelHistory.classList.contains("active") ? "calc" : "history"));
+
+  const loanAmountEl = document.getElementById("loan-amount");
+  const loanRateEl = document.getElementById("loan-rate");
+  const loanDurationEl = document.getElementById("loan-duration");
+  const scheduleBody = document.getElementById("schedule-body");
+  const scheduleFoot = document.getElementById("schedule-foot");
+  const loanOutput = document.getElementById("loan-output");
+
+  const out = {
+    totalAmount: document.getElementById("r-total-amount"),
+    service: document.getElementById("r-service"),
+    insurance: document.getElementById("r-insurance"),
+    totalCharge: document.getElementById("r-total-charge"),
+    monthlyPrincipal: document.getElementById("r-monthly-principal"),
+    monthlyInterest: document.getElementById("r-monthly-interest"),
+    monthlyInstallment: document.getElementById("r-monthly-installment"),
+    disbursement: document.getElementById("r-disbursement"),
+    totalInterest: document.getElementById("r-total-interest"),
+    totalPayment: document.getElementById("r-total-payment"),
+  };
+
+  function formatRs(n) {
+    if (!isFinite(n)) return "Rs. 0";
+    return "Rs. " + Math.round(n).toLocaleString("en-IN");
+  }
+
+  function formatRs2(n) {
+    if (!isFinite(n)) return "Rs. 0.00";
+    return "Rs. " + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function calcLoan() {
+    const P = Math.round(parseFloat(loanAmountEl.value) || 0);
+    const typedRate = parseFloat(loanRateEl.value);
+    const annualRate = (loanRateEl.value.trim() !== "" && !isNaN(typedRate)) ? typedRate : (window.dmDefaultRate || 0);
+    const months = Math.max(0, Math.round(parseFloat(loanDurationEl.value) || 0));
+
+    const service = Math.round(P * 0.01);
+    const insurance = Math.round((P / 1000) * 5.20 * (months / 12));
+    const totalCharge = service + insurance;
+    const disbursement = P - totalCharge;
+
+    const monthlyPrincipal = months > 0 ? Math.floor(P / months) : 0;
+
+    const rows = [];
+    let balance = P;
+    let totalInterest = 0;
+
+    for (let m = 1; m <= months; m++) {
+      const isLast = m === months;
+      const interestPortion = Math.round(balance * (annualRate / 100) / 365 * 30 * 100) / 100;
+      const principalPortion = isLast ? balance : monthlyPrincipal;
+      const installment = principalPortion + interestPortion;
+      balance = Math.max(balance - principalPortion, 0);
+      totalInterest += interestPortion;
+      rows.push({ m, principalPortion, interestPortion, installment, balance });
+    }
+
+    const totalPayment = P + totalInterest;
+    const firstMonthInterest = rows.length ? rows[0].interestPortion : 0;
+    const firstMonthInstallment = rows.length ? rows[0].installment : 0;
+
+    out.totalAmount.textContent = formatRs(P);
+    out.service.textContent = formatRs(service);
+    out.insurance.textContent = formatRs(insurance);
+    out.totalCharge.textContent = formatRs(totalCharge);
+    out.monthlyPrincipal.textContent = formatRs(monthlyPrincipal);
+    out.monthlyInterest.textContent = formatRs2(firstMonthInterest);
+    out.monthlyInstallment.textContent = formatRs2(firstMonthInstallment);
+    out.disbursement.textContent = formatRs(Math.max(disbursement, 0));
+    out.totalInterest.textContent = formatRs2(totalInterest);
+    out.totalPayment.textContent = formatRs2(totalPayment);
+
+    buildSchedule(rows);
+    loanOutput.classList.add("show");
+  }
+
+  function buildSchedule(rows) {
+    scheduleBody.innerHTML = "";
+    scheduleFoot.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    let sumPrincipal = 0, sumInterest = 0, sumInstallment = 0;
+
+    rows.forEach((row) => {
+      sumPrincipal += row.principalPortion;
+      sumInterest += row.interestPortion;
+      sumInstallment += row.installment;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.m}</td>
+        <td>${formatRs(row.principalPortion)}</td>
+        <td>${formatRs2(row.interestPortion)}</td>
+        <td>${formatRs2(row.installment)}</td>
+        <td class="balance">${formatRs(row.balance)}</td>
+      `;
+      frag.appendChild(tr);
+    });
+    scheduleBody.appendChild(frag);
+
+    if (rows.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>Total</td>
+        <td>${formatRs(sumPrincipal)}</td>
+        <td>${formatRs2(sumInterest)}</td>
+        <td>${formatRs2(sumInstallment)}</td>
+        <td>Rs. 0</td>
+      `;
+      scheduleFoot.appendChild(tr);
+    }
+  }
+
+  function clearLoan() {
+    loanAmountEl.value = "";
+    loanRateEl.value = "";
+    loanDurationEl.value = "";
+    Object.values(out).forEach((el) => { el.textContent = "Rs. 0"; });
+    scheduleBody.innerHTML = "";
+    scheduleFoot.innerHTML = "";
+    loanOutput.classList.remove("show");
+  }
+
+  document.getElementById("loan-calculate").addEventListener("click", calcLoan);
+  document.getElementById("loan-clear").addEventListener("click", clearLoan);
+  clearLoan();
+
+  const themeToggle = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+
+  function applyTheme(theme) {
+    if (theme === "classic-light") {
+      root.setAttribute("data-theme", "classic-light");
+    } else {
+      root.removeAttribute("data-theme");
+    }
+  }
+
+  let savedTheme = "default";
+  try {
+    savedTheme = localStorage.getItem("dm-calc-theme") || "default";
+  } catch (e) {
+    savedTheme = "default";
+  }
+  applyTheme(savedTheme);
+
+  themeToggle.addEventListener("click", () => {
+    const next = root.getAttribute("data-theme") === "classic-light" ? "default" : "classic-light";
+    applyTheme(next);
+    try {
+      localStorage.setItem("dm-calc-theme", next);
+    } catch (e) {}
+  });
+})();
+
+(function () {
+  const menu = document.getElementById("menu");
+  document.getElementById("menu-btn").addEventListener("click", (e) => { e.stopPropagation(); menu.classList.toggle("open"); });
+  document.addEventListener("click", () => menu.classList.remove("open"));
+  document.getElementById("menu-clear").addEventListener("click", () => document.getElementById("history-clear").click());
+  const rateIn = document.getElementById("set-rate"), rateNote = document.getElementById("rate-note"), loanRate = document.getElementById("loan-rate");
+  function applyRate(r, persist) {
+    window.dmDefaultRate = r || 0;
+    rateIn.value = r ? r : "";
+    loanRate.placeholder = r ? String(r) : "10";
+    rateNote.textContent = r ? "Saved: " + r + "% per year. Used in the Loan calculator when its interest rate is left empty. A rate typed there is used instead." : "No default rate saved.";
+    if (persist) { try { localStorage.setItem("dm-calc-rate", String(r || "")); } catch (e) {} }
+  }
+  let savedRate = 0;
+  try { savedRate = parseFloat(localStorage.getItem("dm-calc-rate")) || 0; } catch (e) {}
+  applyRate(savedRate, false);
+  document.getElementById("rate-save").addEventListener("click", () => applyRate(parseFloat(rateIn.value) || 0, true));
+  document.getElementById("rate-reset").addEventListener("click", () => applyRate(0, true));
+  document.getElementById("tab-history").addEventListener("click", (e) => {
+    if (document.querySelector(".calc").classList.contains("in-extra")) { e.stopImmediatePropagation(); document.getElementById("tab-calc").click(); }
+  }, true);
+  const FEEDBACK_EMAIL = "";
+  function showExtra(id, title) {
+    document.querySelectorAll(".panel").forEach((e) => e.classList.remove("active"));
+    document.getElementById("tab-calc").classList.remove("active");
+    document.getElementById("tab-loan").classList.remove("active");
+    document.getElementById(id).classList.add("active");
+    document.querySelector(".calc").classList.add("in-extra");
+    document.getElementById("title").textContent = title;
+  }
+  document.getElementById("menu-settings").addEventListener("click", () => showExtra("panel-settings", "Settings"));
+  document.getElementById("menu-feedback").addEventListener("click", () => showExtra("panel-feedback", "Send feedback"));
+  document.getElementById("fb-send").addEventListener("click", () => {
+    const t = document.getElementById("fb-text").value.trim();
+    if (!t) return;
+    window.open("mailto:" + FEEDBACK_EMAIL + "?subject=" + encodeURIComponent("Calculator feedback") + "&body=" + encodeURIComponent(t), "_blank");
+  });
+  document.getElementById("sci-toggle").addEventListener("click", () => document.getElementById("sci").classList.toggle("hidden"));
+})();
+</script>
+</body>
+</html>
