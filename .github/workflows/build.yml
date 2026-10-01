@@ -18,26 +18,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Android Project Structure
+    - name: Install Gradle
       run: |
-        mkdir -p android-app/app/src/main/assets
-        mkdir -p android-app/app/src/main/java/com/devkumar/calculator
-        mkdir -p android-app/app/src/main/res/values
+        sudo apt-get update
+        sudo apt-get install -y gradle
 
-        # Copy HTML files to assets
-        cp index.html android-app/app/src/main/assets/
+    - name: Create Android Webview Project
+      run: |
+        mkdir -p app/src/main/assets
+        mkdir -p app/src/main/java/com/devkumar/calculator
 
-        # Create AndroidManifest.xml
-        cat << 'EOF' > android-app/app/src/main/AndroidManifest.xml
+        cp index.html app/src/main/assets/
+
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.devkumar.calculator">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.devkumar.calculator">
             <uses-permission android:name="android.permission.INTERNET" />
-            <application
-                android:allowBackup="true"
-                android:label="Devkumar Calculator"
-                android:supportsRtl="true"
-                android:theme="@android:style/Theme.NoTitleBar">
+            <application android:label="Devkumar Calculator" android:theme="@android:style/Theme.NoTitleBar">
                 <activity android:name=".MainActivity" android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
@@ -48,8 +45,7 @@ jobs:
         </manifest>
         EOF
 
-        # Create MainActivity.java
-        cat << 'EOF' > android-app/app/src/main/java/com/devkumar.calculator/MainActivity.java
+        cat << 'EOF' > app/src/main/java/com/devkumar/calculator/MainActivity.java
         package com.devkumar.calculator;
         import android.app.Activity;
         import android.os.Bundle;
@@ -69,55 +65,36 @@ jobs:
         }
         EOF
 
-        # Create build.gradle for app
-        cat << 'EOF' > android-app/app/build.gradle
-        plugins {
-            id 'com.android.application'
+        cat << 'EOF' > build.gradle
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.1.1' }
         }
+        allprojects { repositories { google(); mavenCentral() } }
+        EOF
+
+        cat << 'EOF' > app/build.gradle
+        plugins { id 'com.android.application' }
         android {
             namespace 'com.devkumar.calculator'
-            compileSdk 34
+            compileSdk 33
             defaultConfig {
                 applicationId "com.devkumar.calculator"
                 minSdk 21
-                targetSdk 34
+                targetSdk 33
                 versionCode 1
                 versionName "1.0"
             }
         }
         EOF
 
-        # Create root build.gradle
-        cat << 'EOF' > android-app/build.gradle
-        buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.2.1'
-            }
-        }
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        EOF
+        echo "include ':app'" > settings.gradle
 
-        # Create settings.gradle
-        cat << 'EOF' > android-app/settings.gradle
-        include ':app'
-        EOF
+    - name: Build Debug APK
+      run: gradle assembleDebug
 
-    - name: Build Debug APK with Gradle
-      run: |
-        cd android-app
-        gradle assembleDebug
-
-    - name: Upload APK Artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Calculator-APK
-        path: android-app/app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
